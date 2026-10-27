@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1018">
+<title>Signal Forge — Stock Signal Bot</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1018;--panel:#131b27;--panel2:#182333;--line:#28364a;--text:#edf3fb;--muted:#9aabc0;--green:#41d6a0;--red:#ff6b78;--amber:#f2c46d;--blue:#8db8ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:760px;margin:auto;padding:18px 15px 36px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:6px 0 20px}.brand{font-weight:850;letter-spacing:.04em;font-size:17px}.brand span{color:var(--green)}.pill{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:5px 9px;color:var(--muted)}
+h1{font-size:29px;line-height:1.12;margin:0 0 8px;letter-spacing:-.04em}p{margin:0}.sub{color:var(--muted);margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}.price{font-size:33px;font-weight:800;letter-spacing:-.04em;margin:5px 0}.muted{color:var(--muted)}.small{font-size:12px}.signal{display:flex;gap:12px;align-items:center;margin-top:12px}.signalIcon{width:48px;height:48px;border-radius:14px;background:var(--panel2);display:grid;place-items:center;font-size:24px}.signal h2{font-size:22px;margin:0}.signal p{color:var(--muted);font-size:13px}.up{color:var(--green)}.down{color:var(--red)}.wait{color:var(--amber)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:14px}.metric{background:var(--panel2);border-radius:12px;padding:11px}.metric b{display:block;font-size:19px;margin-top:4px}.metric span{font-size:11px;color:var(--muted)}
+label{display:block;font-size:12px;color:var(--muted);margin:13px 0 6px;font-weight:650}input,select{width:100%;background:#0c131e;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:12px;font:inherit;outline:none}input:focus,select:focus{border-color:var(--blue)}button{border:0;border-radius:12px;padding:12px 14px;font:inherit;font-weight:750;cursor:pointer;background:var(--green);color:#071710}button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}button:disabled{opacity:.55}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:15px}.status{font-size:12px;color:var(--muted);margin-top:10px;min-height:18px}.bar{height:6px;background:var(--panel2);border-radius:8px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;width:0;background:var(--green);transition:width .3s}
+ul{padding-left:18px;margin:10px 0 0}li{margin:6px 0;color:#d3dfec}.notice{border-left:3px solid var(--amber);padding:10px 12px;background:#211d16;border-radius:0 10px 10px 0;font-size:12px;color:#f2dfb8;margin:12px 0}.events{display:flex;flex-direction:column;gap:8px;margin-top:10px}.event{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}.event:last-child{border:0}.footer{color:var(--muted);font-size:11px;margin-top:18px}
+@media(min-width:600px){main{padding:26px 22px 40px}.card{padding:20px}.layout{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}.layout>.card{margin:0}.wide{grid-column:1/-1}}
+</style>
+</head>
+<body><main>
+<div class="top"><div class="brand">◈ SIGNAL <span>FORGE</span></div><div class="pill" id="connection">● NOT CONNECTED</div></div>
+<h1>Trade the setup. Manage the risk.</h1><p class="sub">Live quote + technical setup monitor for your watchlist. Built for mobile.</p>
+<div class="layout">
+<section class="card">
+<div class="row"><span class="label">Selected stock</span><span class="pill" id="marketState">WAITING FOR DATA</span></div>
+<div style="display:flex;gap:9px;align-items:center;margin-top:12px"><div style="flex:1"><input id="ticker" value="NVDA" autocapitalize="characters" aria-label="Stock ticker" placeholder="Ticker e.g. NVDA"></div><button id="load">Analyze</button></div>
+<div class="price" id="price">—</div><div id="change" class="muted">Connect a market data key to load a quote.</div>
+<div class="signal"><div class="signalIcon" id="signalIcon">◷</div><div><h2 class="wait" id="signalTitle">Awaiting live data</h2><p id="signalDesc">No signal until fresh candles load.</p></div></div>
+<div class="grid"><div class="metric"><span>EMA 9</span><b id="ema9">—</b></div><div class="metric"><span>EMA 21</span><b id="ema21">—</b></div><div class="metric"><span>EMA 50</span><b id="ema50">—</b></div><div class="metric"><span>RSI (14)</span><b id="rsi">—</b></div><div class="metric"><span>Volume</span><b id="volume">—</b></div><div class="metric"><span>Data age</span><b id="age">—</b></div></div>
+<div class="bar"><i id="confidence"></i></div><div class="row small muted" style="margin-top:6px"><span>Rule alignment (not win probability)</span><b id="alignment">—</b></div>
+</section>
+<section class="card">
+<div class="label">Connect live data</div>
+<p class="muted small" style="margin-top:6px">Uses Finnhub's stock quote and candle endpoints. Create a key with the provider, then paste it here. The key stays in this page's memory only.</p>
+<label for="apiKey">Finnhub API token</label><input id="apiKey" type="password" autocomplete="off" placeholder="Paste your API token">
+<label for="interval">Candle interval</label><select id="interval"><option value="5">5 minutes (intraday)</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="D" selected>Daily</option></select>
+<label for="refresh">Refresh interval</label><select id="refresh"><option value="30">30 seconds</option><option value="60" selected>1 minute</option><option value="300">5 minutes</option></select>
+<div class="actions"><button id="connect">Connect &amp; scan</button><button class="secondary" id="stop">Stop scan</button></div>
+<div class="status" id="status" role="status">Not connected. Add a valid API key to begin.</div>
+<div class="notice">Market data access and delay depend on your provider plan and exchange permissions. This page does not guarantee real-time exchange data.</div>
+</section>
+<section class="card wide">
+<div class="row"><div><div class="label">Strategy lab</div><p style="margin-top:5px;font-weight:750">Test the rules before risking money</p></div><span class="pill">BACKTEST</span></div>
+<p class="muted small" style="margin-top:8px">Runs a simple historical simulation on the candles fetched from your market-data provider. Includes configurable transaction costs and stop-loss / take-profit rules. Results are historical, not a forecast.</p>
+<div class="grid">
+<div><label for="stopLoss">Stop loss (%)</label><input id="stopLoss" type="number" min="0.5" max="20" step="0.5" value="3"></div>
+<div><label for="takeProfit">Take profit (%)</label><input id="takeProfit" type="number" min="1" max="50" step="0.5" value="6"></div>
+<div><label for="costBps">Costs per side (bps)</label><input id="costBps" type="number" min="0" max="200" step="1" value="5"></div>
+</div>
+<button id="backtest" class="secondary" style="width:100%;margin-top:13px">Run backtest on loaded candles</button>
+<div id="backtestStatus" class="status">Connect and scan first to load historical candles.</div>
+<div class="grid">
+<div class="metric"><span>Strategy return</span><b id="btReturn">—</b></div>
+<div class="metric"><span>Buy &amp; hold</span><b id="btHold">—</b></div>
+<div class="metric"><span>Max drawdown</span><b id="btDrawdown">—</b></div>
+<div class="metric"><span>Win rate</span><b id="btWin">—</b></div>
+<div class="metric"><span>Closed trades</span><b id="btTrades">—</b></div>
+<div class="metric"><span>Profit factor</span><b id="btPF">—</b></div>
+</div>
+<div class="notice">A good backtest is not proof of future performance. Test multiple market regimes and tickers, include realistic execution costs, and use paper trading before live decisions.</div>
+</section>
+<section class="card wide"><div class="row"><div><div class="label">Signal logic</div><p style="margin-top:5px;font-weight:750">Trend + momentum + risk controls</p></div><span class="pill">LONG ONLY</span></div>
+<ul><li><b class="up">BUY WATCH:</b> EMA 9 crosses above EMA 21, price above EMA 50, RSI 50–70.</li><li><b class="down">SELL / EXIT WATCH:</b> EMA 9 crosses below EMA 21, or price falls below EMA 50.</li><li><b class="wait">HOLD / WAIT:</b> mixed conditions, overbought momentum, or insufficient / stale data.</li><li>Uses closed candles for crossover checks to reduce intrabar flicker; this is a rules-based signal engine, not a predictive AI model.</li></ul>
+<div class="label" style="margin-top:18px">Recent alerts</div><div id="events" class="events"><div class="muted small">Alerts will appear here after scanning begins.</div></div>
+<div class="footer">Educational tool only. No orders are placed. Signals can be wrong, data can be delayed, and fees/slippage are not modelled. Paper-test and backtest before risking money. Do not paste brokerage passwords or trading API secrets here.</div>
+</section>
+</div></main>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);let timer=null,lastSignal=null,lastAlertAt=0,lastDataAt=null,latestCandles=null;
+const fmt=n=>Number.isFinite(n)?n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
+const compact=n=>Number.isFinite(n)?Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:1}).format(n):'—';
+function status(s){$('status').textContent=s}
+function event(msg,kind='wait'){const wrap=$('events');if(wrap.children.length===1&&wrap.textContent.includes('Alerts will'))wrap.innerHTML='';const row=document.createElement('div');row.className='event';const left=document.createElement('span');left.textContent=msg;left.className=kind;const right=document.createElement('span');right.className='muted';right.textContent=new Date().toLocaleTimeString();row.append(left,right);wrap.prepend(row);while(wrap.children.length>8)wrap.lastChild.remove()}
+function ema(values,period){if(values.length<period)return NaN;const k=2/(period+1);let e=values.slice(0,period).reduce((a,b)=>a+b,0)/period;for(let i=period;i<values.length;i++)e=values[i]*k+e*(1-k);return e}
+function rsi(values,period=14){if(values.length<period+1)return NaN;let gain=0,loss=0;for(let i=values.length-period;i<values.length;i++){let d=values[i]-values[i-1];if(d>0)gain+=d;else loss-=d}if(loss===0)return 100;return 100-100/(1+gain/loss)}
+async function getJson(url){const res=await fetch(url);if(!res.ok)throw new Error('Provider HTTP '+res.status);const j=await res.json();if(j.error)throw new Error(j.error);return j}
+async function scan(){
+ const token=$('apiKey').value.trim(),ticker=$('ticker').value.trim().toUpperCase(),interval=$('interval').value;
+ if(!token){status('Enter your Finnhub API token first.');return}
+ if(!/^[A-Z0-9.^-]{1,15}$/.test(ticker)){status('Enter a valid ticker symbol.');return}
+ $('ticker').value=ticker;status('Fetching quote and candles for '+ticker+'…');
+ try{
+ const now=Math.floor(Date.now()/1000),from=now-(interval==='D'?180:Math.max(Number(interval),5)*180*60);
+ const base='https://finnhub.io/api/v1';
+ const [q,c]=await Promise.all([
+ getJson(base+'/quote?symbol='+encodeURIComponent(ticker)+'&token='+encodeURIComponent(token)),
+ getJson(base+'/stock/candle?symbol='+encodeURIComponent(ticker)+'&resolution='+encodeURIComponent(interval)+'&from='+from+'&to='+now+'&token='+encodeURIComponent(token))
+ ]);
+ if(!q||!Number.isFinite(Number(q.c))||Number(q.c)===0)throw new Error('No quote returned. Check ticker, token, market permissions, and provider limits.');
+ if(!c||c.s!=='ok'||!Array.isArray(c.c)||c.c.length<55)throw new Error('Not enough candle history for EMA 50. Try daily candles or another ticker.');
+ latestCandles={closes:c.c.map(Number),volumes:(c.v||[]).map(Number),times:(c.t||[]).map(Number),interval};const closes=latestCandles.closes,volumes=latestCandles.volumes,e9=ema(closes,9),e21=ema(closes,21),e50=ema(closes,50),rv=rsi(closes);
+ const prev9=ema(closes.slice(0,-1),9),prev21=ema(closes.slice(0,-1),21);
+ const crossUp=prev9<=prev21&&e9>e21,crossDown=prev9>=prev21&&e9<e21;
+ const price=Number(q.c),change=Number(q.d),pct=Number(q.dp);
+ $('price').textContent='$'+fmt(price);$('change').textContent=(change>=0?'+':'')+fmt(change)+' ('+(pct>=0?'+':'')+fmt(pct)+'%) · previous close $'+fmt(Number(q.pc));
+ $('change').className=change>=0?'up':'down';
+ $('ema9').textContent=fmt(e9);$('ema21').textContent=fmt(e21);$('ema50').textContent=fmt(e50);$('rsi').textContent=fmt(rv);$('volume').textContent=compact(volumes.at(-1));
+ lastDataAt=Date.now();$('age').textContent='now';$('connection').textContent='● CONNECTED';$('connection').style.color='var(--green)';$('marketState').textContent='DATA RECEIVED';
+ let signal='WAIT',desc='Trend confirmation is mixed.',align=0,cls='wait',ico='◷';
+ if(crossUp&&price>e50&&rv>=50&&rv<=70){signal='BUY WATCH';desc='Bullish EMA crossover with trend and RSI confirmation.';align=100;cls='up';ico='↗'}
+ else if(crossDown||price<e50){signal='SELL / EXIT WATCH';desc=crossDown?'Bearish EMA crossover on latest candle.':'Price is below EMA 50; trend risk is elevated.';align=100;cls='down';ico='↘'}
+ else if(e9>e21&&price>e50&&rv>=50&&rv<=70){signal='BULLISH SETUP';desc='Trend and momentum agree, but no fresh bullish crossover.';align=75;cls='up';ico='↗'}
+ else if(rv>70){signal='WAIT — HOT RSI';desc='Momentum may be overextended; avoid chasing.';align=35;cls='wait';ico='!'}
+ else {align=(e9>e21?25:0)+(price>e50?25:0)+(rv>=50&&rv<=70?25:0);if(align===75){cls='up';desc='Most conditions align; wait for a clean trigger.'}}
+ $('signalTitle').textContent=signal;$('signalTitle').className=cls;$('signalIcon').textContent=ico;$('signalDesc').textContent=desc;$('confidence').style.width=align+'%';$('alignment').textContent=align+'%';
+ status('Last successful scan '+new Date().toLocaleTimeString()+'. Quotes can be delayed depending on your data plan.');
+ if(signal!==lastSignal){event(ticker+': '+signal+' — '+desc,cls);lastSignal=signal;lastAlertAt=Date.now();if(signal!=='WAIT'&&'Notification'in window&&Notification.permission==='granted')new Notification(ticker+' '+signal,{body:desc})}
+ }catch(e){status('Could not update: '+e.message);$('marketState').textContent='DATA ERROR';$('connection').textContent='● ERROR';$('connection').style.color='var(--red)'}
+}
+$('connect').addEventListener('click',async()=>{if(timer)clearInterval(timer);await scan();const secs=Number($('refresh').value);timer=setInterval(scan,secs*1000)});
+$('load').addEventListener('click',scan);
+$('stop').addEventListener('click',()=>{if(timer)clearInterval(timer);timer=null;status('Scanning stopped.');$('connection').textContent='● PAUSED';$('connection').style.color='var(--amber)'});
+$('refresh').addEventListener('change',()=>{if(timer){clearInterval(timer);timer=setInterval(scan,Number($('refresh').value)*1000)}});
+$('ticker').addEventListener('keydown',e=>{if(e.key==='Enter')scan()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&timer&&lastDataAt&&Date.now()-lastDataAt>Number($('refresh').value)*1000)scan()});
+
+function runBacktest(){
+ if(!latestCandles||latestCandles.closes.length<60){$('backtestStatus').textContent='Load at least 60 candles first.';return}
+ const prices=latestCandles.closes,sl=Math.max(.5,Number($('stopLoss').value)||3)/100,tp=Math.max(1,Number($('takeProfit').value)||6)/100,cost=Math.max(0,Number($('costBps').value)||0)/10000;
+ let cash=1,qty=0,entry=0,entryCost=0,peak=1,maxDD=0,closed=[],equity=[1],position=false;
+ let grossWin=0,grossLoss=0;
+ // Signal at candle i is acted on at the next candle's open/close proxy (next close),
+ // so the current candle's close is never used to trade at that same close.
+ for(let i=51;i<prices.length-1;i++){
+   const hist=prices.slice(0,i+1),prior=prices.slice(0,i);
+   const e9=ema(hist,9),e21=ema(hist,21),e50=ema(hist,50),p9=ema(prior,9),p21=ema(prior,21),r=rsi(hist);
+   const next=prices[i+1];
+   const crossUp=p9<=p21&&e9>e21, crossDown=p9>=p21&&e9<e21;
+   if(position){
+     let reason='',exit=next;
+     if(next<=entry*(1-sl)){exit=entry*(1-sl);reason='stop'}
+     else if(next>=entry*(1+tp)){exit=entry*(1+tp);reason='target'}
+     else if(crossDown||next<e50){reason='trend'}
+     if(reason){
+       cash=qty*exit*(1-cost);const ret=(cash/(entry*qty*(1+cost)))-1;
+       closed.push(ret);if(ret>0)grossWin+=ret;else grossLoss+=Math.abs(ret);
+       qty=0;position=false;
+     }
+   } else if(crossUp&&next>e50&&r>=50&&r<=70){
+     entry=next;qty=cash/(entry*(1+cost));entryCost=cash;position=true;cash=0;
+   }
+   const value=position?qty*next:cash;
+   equity.push(value);peak=Math.max(peak,value);maxDD=Math.max(maxDD,(peak-value)/peak);
+ }
+ if(position){const final=prices[prices.length-1];cash=qty*final*(1-cost);const ret=cash/(entry*qty*(1+cost))-1;closed.push(ret);if(ret>0)grossWin+=ret;else grossLoss+=Math.abs(ret)}
+ const finalValue=position?qty*prices[prices.length-1]*(1-cost):cash;
+ const strategyReturn=(finalValue-1)*100,hold=(prices.at(-1)/prices[51]-1)*100,win=closed.length?closed.filter(x=>x>0).length/closed.length*100:0,pf=grossLoss?grossWin/grossLoss:(grossWin?Infinity:0);
+ const pct=x=>(x>=0?'+':'')+x.toFixed(2)+'%';
+ $('btReturn').textContent=pct(strategyReturn);$('btReturn').className=strategyReturn>=0?'up':'down';
+ $('btHold').textContent=pct(hold);$('btHold').className=hold>=0?'up':'down';
+ $('btDrawdown').textContent=(maxDD*100).toFixed(2)+'%';$('btWin').textContent=win.toFixed(1)+'%';$('btTrades').textContent=String(closed.length);$('btPF').textContent=Number.isFinite(pf)?pf.toFixed(2):'∞';
+ $('backtestStatus').textContent='Simulation complete · '+prices.length+' candles · '+latestCandles.interval+' interval · assumes next-candle-close execution proxy, costs each side. Check whether the sample covers different market conditions.';
+}
+$('backtest').addEventListener('click',runBacktest);
+
+if('Notification'in window){const b=document.createElement('button');b.className='secondary';b.style.width='100%';b.style.marginTop='9px';b.textContent='Enable browser notifications';b.addEventListener('click',async()=>{const p=await Notification.requestPermission();status(p==='granted'?'Notifications enabled while this page is open.':'Notification permission not granted.')});$('connect').parentElement.after(b)}
+})();
+</script></body></html>
